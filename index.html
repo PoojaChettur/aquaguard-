@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AquaGuard — DeepSea Sonar & Microplastics AI Intelligence Platform</title>
+  <meta name="description" content="AquaGuard Multi-Station Naval Sonar Intelligence Platform featuring TensorFlow.js deep learning classification, dedicated ROV Submersible Optical Inspection Station, microplastic density mapping, and open-source bathymetry.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom Design System -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/leaflet-custom.css">
+</head>
+<body>
+
+  <!-- Top Navigation & Page Switcher -->
+  <header class="cmd-topbar">
+    <div class="cmd-brand">
+      <div class="cmd-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#040810" stroke-width="2.5">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div>
+        <div class="cmd-title">AQUAGUARD // DEEPSEA INTELLIGENCE</div>
+        <div class="text-[10px] text-muted code-font" id="header-mission-name">Microplastic & Polymer Plume Survey (FLS • 900 kHz)</div>
+      </div>
+    </div>
+
+    <!-- 5-Page Multi-Station Navigation -->
+    <nav class="page-switcher-nav" aria-label="Main Navigation">
+      <button class="nav-page-btn active" data-page="sonar">
+        <span>🛰️ Sonar AI Command</span>
+      </button>
+      <button class="nav-page-btn" data-page="rov">
+        <span>🤖 ROV Optical Station</span>
+      </button>
+      <button class="nav-page-btn" data-page="map">
+        <span>🗺️ Ocean Swath Map</span>
+      </button>
+      <button class="nav-page-btn" data-page="analytics">
+        <span>📊 Analytics & Registry</span>
+      </button>
+      <button class="nav-page-btn" data-page="cleanup">
+        <span>📑 Cleanup Plan</span>
+      </button>
+    </nav>
+
+    <!-- Global Actions -->
+    <div class="cmd-actions">
+      <button class="cmd-btn" id="btn-toggle-audio" title="Toggle Acoustic Sonar Audio Effects">
+        <span id="audio-icon">🔊 Audio ON</span>
+      </button>
+
+      <button class="cmd-btn primary" id="btn-run-scan">
+        <span>⚡ Neural AI Scan</span>
+      </button>
+
+      <button class="cmd-btn gold" id="btn-judge-tour">
+        <span>★ Judge Pitch Tour</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- PAGE 1: SONAR AI COMMAND CENTER                           -->
+  <!-- ========================================================= -->
+  <main class="page-view active" id="view-page-sonar">
+    <div class="cmd-layout">
+      <!-- Left Controls -->
+      <aside class="cmd-panel">
+        <div class="cmd-panel-title">
+          <span>📡 Acoustic Ingestion Feeds</span>
+        </div>
+
+        <div class="mission-selector-grid">
+          <div class="mission-selector-card active" data-preset="mission_echo">
+            <div class="mission-card-header">
+              <span class="mission-name">✨ Microplastics Plume</span>
+              <span class="mission-badge" style="background:rgba(0,240,255,0.2); color:#00f0ff;">Nurdles Bed</span>
+            </div>
+            <div class="mission-dataset">Marine Debris FLS (900 kHz)</div>
+          </div>
+
+          <div class="mission-selector-card" data-preset="mission_alpha">
+            <div class="mission-card-header">
+              <span class="mission-name">Continental Shelf</span>
+              <span class="mission-badge moderate">Ghost Net</span>
+            </div>
+            <div class="mission-dataset">KLSG • FLS (450 kHz)</div>
+          </div>
+
+          <div class="mission-selector-card" data-preset="mission_bravo">
+            <div class="mission-card-header">
+              <span class="mission-name">Coastal Harbor</span>
+              <span class="mission-badge critical">Drums / Tire</span>
+            </div>
+            <div class="mission-dataset">Marine Debris FLS (900 kHz)</div>
+          </div>
+
+          <div class="mission-selector-card" data-preset="mission_charlie">
+            <div class="mission-card-header">
+              <span class="mission-name">Maritime UXO Zone</span>
+              <span class="mission-badge critical">Naval Mine 96%</span>
+            </div>
+            <div class="mission-dataset">KLSG • SCTD (500 kHz)</div>
+          </div>
+
+          <div class="mission-selector-card" data-preset="mission_delta">
+            <div class="mission-card-header">
+              <span class="mission-name">Industrial Wreckage</span>
+              <span class="mission-badge critical">Airframe 88%</span>
+            </div>
+            <div class="mission-dataset">KLSG Benchmark (410 kHz)</div>
+          </div>
+        </div>
+
+        <!-- Custom Upload -->
+        <div class="cmd-dropzone" id="cmd-upload-dropzone" title="Click to browse or drag & drop sonar scan">
+          <input type="file" id="cmd-file-input" accept="image/png, image/jpeg, image/tiff, image/webp" style="display:none;">
+          <div class="text-base mb-1" id="upload-icon">📥</div>
+          <div class="text-xs font-bold text-white" id="upload-title">Ingest Custom Sonar Scan</div>
+          <div class="text-[10px] text-muted" id="upload-subtitle">Drop PNG, JPG or TIFF • or click to browse</div>
+          <button class="cmd-btn primary mt-2" id="btn-browse-file" style="padding:3px 10px; font-size:10px;" onclick="document.getElementById('cmd-file-input').click(); event.stopPropagation();">
+            <span>📂 Browse Sonar Image</span>
+          </button>
+        </div>
+
+        <!-- Preprocessing -->
+        <div class="cmd-panel-title mt-2">
+          <span>🎛️ Acoustic Preprocessing</span>
+        </div>
+
+        <div class="cmd-filter-group">
+          <div class="text-[11px] font-bold text-white mb-1">Sonar False-Color Palette</div>
+          <div class="cmd-colormap-grid">
+            <button class="cmd-colormap-btn active" data-colormap="amber">
+              <span style="width:8px; height:8px; border-radius:50%; background:#f59e0b;"></span> Amber Sand
+            </button>
+            <button class="cmd-colormap-btn" data-colormap="phosphor">
+              <span style="width:8px; height:8px; border-radius:50%; background:#10b981;"></span> CRT Phosphor
+            </button>
+            <button class="cmd-colormap-btn" data-colormap="cyan">
+              <span style="width:8px; height:8px; border-radius:50%; background:#00f0ff;"></span> Ocean Cyan
+            </button>
+            <button class="cmd-colormap-btn" data-colormap="greyscale">
+              <span style="width:8px; height:8px; border-radius:50%; background:#94a3b8;"></span> Greyscale
+            </button>
+          </div>
+
+          <div class="flex justify-between items-center mt-2">
+            <div>
+              <div class="text-xs font-bold text-white">CLAHE Sharpening</div>
+              <div class="text-[9px] text-muted">Acoustic shadow equalizing</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="cmd-toggle-clahe" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-xs font-bold text-white">Speckle Filter</div>
+              <div class="text-[9px] text-muted">3×3 Fast median filter</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="cmd-toggle-speckle" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <div class="mt-1">
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-muted">Acoustic Gain:</span>
+              <span class="code-font text-cyan" id="cmd-gain-badge">1.15x</span>
+            </div>
+            <input type="range" class="range-slider" id="cmd-range-gain" min="0.5" max="2.0" step="0.05" value="1.15">
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Tactical Viewport -->
+      <section class="center-stage">
+        <div class="viewport-container">
+          <div class="viewport-header">
+            <div class="flex items-center gap-2">
+              <span style="width:8px; height:8px; border-radius:50%; background:#00f0ff; box-shadow:0 0 8px #00f0ff;"></span>
+              <span class="text-xs font-bold text-white uppercase">Tactical Sonar Viewport</span>
+            </div>
+            <div class="viewport-mode-tabs">
+              <button class="viewport-mode-btn active" data-mode="ai">AI Detections</button>
+              <button class="viewport-mode-btn" data-mode="split">CLAHE Split</button>
+              <button class="viewport-mode-btn" data-mode="cam">Acoustic CAM Heatmap</button>
+              <button class="viewport-mode-btn" data-mode="optical">AI Optical View</button>
+            </div>
+          </div>
+
+          <div class="sonar-canvas-box">
+            <canvas id="main-sonar-canvas"></canvas>
+            <input type="range" min="0" max="100" value="50" class="viewport-split-slider" id="viewport-split-slider" title="Drag to compare Raw vs Enhanced">
+          </div>
+        </div>
+
+        <!-- Quick Map & Analytics Row -->
+        <div class="map-analytics-grid">
+          <div class="cmd-panel" style="padding:12px;">
+            <div class="flex justify-between items-center mb-2">
+              <span class="cmd-panel-title" style="border:none; padding:0;">🗺️ Bathymetric Ocean Swath</span>
+              <button class="cmd-btn" onclick="window.app.switchPage('map')" style="padding:2px 8px; font-size:10px;">
+                <span>Full Map →</span>
+              </button>
+            </div>
+            <div class="cmd-map-wrapper" style="height:230px;">
+              <div id="leaflet-sonar-map" style="height:100%; width:100%;"></div>
+            </div>
+          </div>
+
+          <div class="cmd-panel" style="padding:12px;">
+            <div class="flex justify-between items-center mb-2">
+              <span class="cmd-panel-title" style="border:none; padding:0;">📊 Debris & Microplastic Matrix</span>
+              <button class="cmd-btn" onclick="window.app.switchPage('analytics')" style="padding:2px 8px; font-size:10px;">
+                <span>Full Registry →</span>
+              </button>
+            </div>
+            <div style="height: 190px; position: relative;">
+              <canvas id="chart-taxonomy"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel -->
+      <aside class="cmd-panel">
+        <div class="cmd-panel-title">
+          <span>🧠 TensorFlow.js Neural Classifier</span>
+        </div>
+
+        <div class="prob-bars-container" id="ai-prob-bars-container"></div>
+
+        <!-- Microplastic Telemetry -->
+        <div id="microplastic-telemetry-widget" class="bg-cyan-950/40 p-2.5 rounded-lg border border-cyan-500/30 text-xs">
+          <div class="flex justify-between items-center mb-1">
+            <strong class="text-cyan uppercase">✨ Microplastic Telemetry:</strong>
+            <span class="text-[9px] code-font bg-cyan-500/20 text-cyan px-1 rounded">HOTSPOT DETECTED</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+            <div><span class="text-muted">Density:</span> <strong class="text-white" id="mp-density-val">18,450 part/m³</strong></div>
+            <div><span class="text-muted">Risk:</span> <strong class="text-amber" id="mp-risk-val">HIGH BENTHIC</strong></div>
+            <div style="grid-column: span 2;"><span class="text-muted">Polymers:</span> <span class="text-cyan code-font" id="mp-types-val">PE (48%), PP (26%), PET (15%), Nylon (11%)</span></div>
+          </div>
+        </div>
+
+        <!-- Target Spec -->
+        <div class="cmd-panel-title mt-1">
+          <span>🎯 Target Telemetry & Sizing</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="code-font text-cyan font-bold text-xs" id="insp-id">TGT-MP1</span>
+              <div class="text-xs font-bold text-white" id="insp-label">Dense Microplastic Nurdle Bed</div>
+            </div>
+            <span class="text-[10px] text-muted code-font" id="insp-category">Microplastics</span>
+          </div>
+
+          <div class="bg-black/40 p-2 rounded-lg border border-white/10">
+            <div class="flex justify-between text-[11px] font-bold mb-1">
+              <span>Threat Score:</span>
+              <span class="text-amber" id="insp-risk-score">86/100</span>
+            </div>
+            <div class="prob-bar-bg">
+              <div class="prob-bar-fill" id="insp-risk-bar-fill" style="width: 86%; background-color: #00f0ff;"></div>
+            </div>
+          </div>
+
+          <div class="target-spec-grid">
+            <div class="spec-item">
+              <span class="spec-lbl">Confidence:</span>
+              <span class="spec-val" id="insp-conf">95.0%</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-lbl">Shadow Length:</span>
+              <span class="spec-val" id="insp-shadow">1.4 m</span>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <span class="spec-lbl">Est. Dimensions:</span>
+              <span class="spec-val text-cyan" id="insp-dims">4.8m × 3.6m × 0.3m</span>
+            </div>
+          </div>
+
+          <!-- Remediation Action Trigger Button -->
+          <button class="cmd-btn gold mt-1" id="btn-station1-remediation" onclick="window.app.executeRemediation()" style="justify-content:center; width:100%;">
+            <span>⚡ Dispatch Remediation Action</span>
+          </button>
+        </div>
+
+        <!-- ROV Optical Ground Truth Verification Card -->
+        <div class="flex justify-between items-center mt-1 border-b border-white/10 pb-2">
+          <div class="flex items-center gap-2">
+            <span style="width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 8px #22c55e;"></span>
+            <span class="cmd-panel-title" style="border:none; padding:0;">🤖 ROV Optical Ground Truth</span>
+          </div>
+          <button class="cmd-btn primary" onclick="window.app.switchPage('rov')" style="padding:2px 8px; font-size:10px;">
+            <span>ROV Cockpit →</span>
+          </button>
+        </div>
+
+        <div class="optical-pip-wrap" onclick="window.app.switchPage('rov')" style="cursor:pointer; position:relative; overflow:hidden; border-radius:8px; border:1px solid var(--border-panel);" title="Click to open Full ROV Cockpit Station">
+          <img id="optical-rov-img" src="assets/optical/optical_microplastics.jpg" alt="AI Synthesized Optical View" style="width:100%; height:160px; object-fit:cover; display:block;">
+          <div class="optical-pip-overlay" style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(2,6,18,0.92)); padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <span class="code-font text-[10px] text-cyan font-bold">● ROV HERCULES 4K STREAM</span>
+            <span class="text-[9px] bg-cyan-500/20 text-cyan px-1.5 py-0.5 rounded code-font">100X OPTICAL</span>
+          </div>
+        </div>
+        <div class="text-[10px] text-muted" id="optical-rov-desc">Real-time AI Neural Optical frame synthesized from acoustic contour morphology, shadow slant angle, and surface backscatter impedance.</div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- PAGE 2: DEDICATED ROV OPTICAL SUBMERSIBLE STATION         -->
+  <!-- ========================================================= -->
+  <main class="page-view" id="view-page-rov">
+    <div class="rov-station-layout">
+      <!-- Main ROV Cockpit Screen -->
+      <div class="rov-cockpit-screen">
+        <div class="rov-screen-header">
+          <div class="flex items-center gap-3">
+            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#22c55e; box-shadow:0 0 10px #22c55e;"></span>
+            <div>
+              <h2 class="text-sm font-bold text-white">ROV HERCULES // DEEP-SEA OPTICAL INSPECTION SUITE</h2>
+              <div class="text-[10px] text-muted code-font">4K UHD HDR • DEPTH HOLD • 6-AXIS VECTOR THRUST • 4000M RATED</div>
+            </div>
+          </div>
+
+          <!-- Feed Switcher & Capture -->
+          <div class="flex items-center gap-3">
+            <div class="rov-feed-switcher">
+              <button class="rov-feed-btn active" data-source="hybrid">📸 4K Optical Feed</button>
+              <button class="rov-feed-btn" data-source="neural_synth">🧠 AI Neural Synth</button>
+            </div>
+
+            <button class="cmd-btn primary" id="btn-rov-snapshot">
+              <span>📷 Capture 4K Frame</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cockpit Canvas Viewport -->
+        <div class="rov-canvas-container" title="Click and drag to pan camera, scroll to zoom">
+          <canvas id="rov-cockpit-canvas" width="960" height="600"></canvas>
+        </div>
+
+        <!-- Cockpit Bottom Dock -->
+        <div class="rov-bottom-dock">
+          <!-- Virtual Pan/Tilt D-Pad -->
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-muted code-font uppercase">Pan / Tilt:</span>
+            <div class="rov-dpad">
+              <div></div>
+              <button class="rov-dpad-btn" data-dir="up" title="Pan Camera Up">▲</button>
+              <div></div>
+              <button class="rov-dpad-btn" data-dir="left" title="Pan Camera Left">◀</button>
+              <button class="rov-dpad-btn" data-dir="center" title="Center Camera View">●</button>
+              <button class="rov-dpad-btn" data-dir="right" title="Pan Camera Right">▶</button>
+              <div></div>
+              <button class="rov-dpad-btn" data-dir="down" title="Pan Camera Down">▼</button>
+              <div></div>
+            </div>
+          </div>
+
+          <!-- Quick Magnification Presets -->
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-muted code-font uppercase">Magnification:</span>
+            <div class="quick-zoom-group">
+              <button class="quick-zoom-btn active" data-zoom="1.0">1x Wide</button>
+              <button class="quick-zoom-btn" data-zoom="5.0">5x</button>
+              <button class="quick-zoom-btn" data-zoom="25.0">25x Macro</button>
+              <button class="quick-zoom-btn" data-zoom="100.0">100x Micro</button>
+            </div>
+          </div>
+
+          <!-- HUD & Laser Toggles -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-muted">10cm Lasers:</span>
+              <label class="switch">
+                <input type="checkbox" id="rov-toggle-laser" checked>
+                <span class="slider-round"></span>
+              </label>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-muted">Flight HUD:</span>
+              <label class="switch">
+                <input type="checkbox" id="rov-toggle-hud" checked>
+                <span class="slider-round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROV Cockpit Control Console -->
+      <aside class="cmd-panel">
+        <div class="cmd-panel-title">
+          <span>🤖 ROV Submersible Telemetry</span>
+        </div>
+
+        <!-- ROV Vehicle 3D Isometric Visualizer -->
+        <div class="rov-vehicle-card">
+          <canvas id="rov-vehicle-canvas" width="340" height="150"></canvas>
+        </div>
+
+        <!-- Subsea Illumination Suite -->
+        <div class="cmd-panel-title mt-1">
+          <span>💡 Subsea Illumination Suite</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <button class="cmd-colormap-btn rov-light-btn active" data-light="flood">💡 Dual Floodlights</button>
+          <button class="cmd-colormap-btn rov-light-btn" data-light="spot">🔦 Focused Spotlight</button>
+          <button class="cmd-colormap-btn rov-light-btn" data-light="uv">🟣 UV 365nm Glow</button>
+          <button class="cmd-colormap-btn rov-light-btn" data-light="sit">🟢 SIT Low-Light</button>
+          <button class="cmd-colormap-btn rov-light-btn" data-light="ambient" style="grid-column: span 2;">🌊 Ambient Abyssal Depth</button>
+        </div>
+
+        <!-- Optical Microscope Zoom Slider -->
+        <div class="flex flex-col gap-2 mt-1">
+          <div class="flex justify-between text-xs">
+            <span class="font-bold text-white">Microscope Optical Zoom:</span>
+            <span class="code-font text-cyan" id="rov-zoom-badge">1.0x</span>
+          </div>
+          <input type="range" class="range-slider" id="rov-zoom-slider" min="1.0" max="100.0" step="0.5" value="1.0">
+          <span class="text-[10px] text-muted">Smooth 100x magnification reveals 0–4mm nurdles & microfibers.</span>
+        </div>
+
+        <!-- Robotic Manipulator Suite -->
+        <div class="cmd-panel-title mt-1">
+          <span>🦾 Robotic Manipulator Arm Suite</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button class="rov-tool-card-btn rov-manip-btn active" data-tool="grapple">
+            <span>🪝 Heavy Debris Grapple Claw</span>
+            <span class="text-[10px] text-cyan code-font">READY</span>
+          </button>
+          <button class="rov-tool-card-btn rov-manip-btn" data-tool="cutter">
+            <span>✂️ Hydraulic Rotary Net Cutter</span>
+            <span class="text-[10px] text-cyan code-font">READY</span>
+          </button>
+          <button class="rov-tool-card-btn rov-manip-btn" data-tool="suction">
+            <span>🌀 50-Micron Microplastic Vacuum</span>
+            <span class="text-[10px] text-cyan code-font">READY</span>
+          </button>
+          <button class="rov-tool-card-btn rov-manip-btn" data-tool="scan">
+            <span>🎯 3D Volumetric Laser Scanner</span>
+            <span class="text-[10px] text-cyan code-font">READY</span>
+          </button>
+        </div>
+
+        <!-- Remediation Protocol Trigger Button -->
+        <button class="cmd-btn gold mt-1" id="btn-station2-remediation" onclick="window.app.executeRemediation()" style="justify-content:center; width:100%;">
+          <span>⚡ Execute Subsea Remediation Protocol</span>
+        </button>
+
+        <!-- Quick Jump to Sonar -->
+        <button class="cmd-btn primary mt-2" onclick="window.app.switchPage('sonar')" style="justify-content:center;">
+          <span>← Return to Sonar Command</span>
+        </button>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- PAGE 3: FULL BATHYMETRIC OCEAN SWATH MAP                  -->
+  <!-- ========================================================= -->
+  <main class="page-view" id="view-page-map">
+    <div class="full-map-page-layout">
+      <div class="full-map-wrapper">
+        <div id="leaflet-full-page-map" style="width:100%; height:100%;"></div>
+      </div>
+
+      <aside class="cmd-panel" style="max-height: 700px; overflow-y:auto;">
+        <div class="cmd-panel-title">
+          <span>🗺️ Ocean Sector Target Roster</span>
+        </div>
+
+        <div class="flex gap-2 mb-2">
+          <button class="cmd-colormap-btn active" style="flex:1; justify-content:center;" onclick="window.app.mapManager.filterByRisk('all')">All</button>
+          <button class="cmd-colormap-btn" style="flex:1; justify-content:center; color:#ef4444;" onclick="window.app.mapManager.filterByRisk('critical')">Critical</button>
+          <button class="cmd-colormap-btn" style="flex:1; justify-content:center; color:#f59e0b;" onclick="window.app.mapManager.filterByRisk('moderate')">Moderate</button>
+        </div>
+
+        <div id="full-map-target-list" class="flex flex-col gap-2"></div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- PAGE 4: MISSION ANALYTICS & REGISTRY                      -->
+  <!-- ========================================================= -->
+  <main class="page-view" id="view-page-analytics">
+    <div class="analytics-page-layout">
+      <div class="kpi-cards-grid">
+        <div class="summary-kpi cyan">
+          <span class="val" id="analytics-total-count">11</span>
+          <span class="lbl">Total Targets Geolocated</span>
+        </div>
+        <div class="summary-kpi red">
+          <span class="val" id="analytics-critical-count">4</span>
+          <span class="lbl">Critical High Hazards</span>
+        </div>
+        <div class="summary-kpi green">
+          <span class="val">19.4 km²</span>
+          <span class="lbl">Survey Swath Area</span>
+        </div>
+        <div class="summary-kpi amber">
+          <span class="val">54.8 m</span>
+          <span class="lbl">Average Seabed Depth</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:20px 0;">
+        <div class="cmd-panel" style="height:320px;">
+          <h3 class="text-sm font-bold text-white mb-2">Debris & Microplastic Taxonomy Distribution</h3>
+          <canvas id="analytics-chart-taxonomy"></canvas>
+        </div>
+        <div class="cmd-panel" style="height:320px;">
+          <h3 class="text-sm font-bold text-white mb-2">Bathymetric Depth vs. Threat Matrix Profile</h3>
+          <canvas id="analytics-chart-depth"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================= -->
+  <!-- PAGE 5: CLEANUP MISSION PLANNER & REPORTS                 -->
+  <!-- ========================================================= -->
+  <main class="page-view" id="view-page-cleanup">
+    <div class="cleanup-page-layout">
+      <div class="cmd-panel p-6">
+        <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-white">Official Seabed Remediation & Cleanup Mission Plan</h2>
+            <p class="text-xs text-muted">Generate instant printable executive plans or download georeferenced GIS survey telemetry.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="cmd-btn primary btn-generate-pdf">
+              <span>📄 Open Printable PDF Plan</span>
+            </button>
+            <button class="cmd-btn btn-export-csv" style="background:linear-gradient(135deg,#10b981,#0284c7);">
+              <span>📊 Download CSV Data</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="cleanup-page-preview-content"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Printable Report Modal Overlay -->
+  <div class="modal-overlay" id="report-modal">
+    <div class="modal-card">
+      <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+        <h3 class="text-base font-bold text-white">Official Cleanup Mission Plan</h3>
+        <div class="flex gap-2">
+          <button class="cmd-btn primary" id="btn-print-report">
+            <span>🖨️ Print / Save PDF</span>
+          </button>
+          <button class="cmd-btn" id="close-report-modal">
+            <span>✕ Close</span>
+          </button>
+        </div>
+      </div>
+      <div id="report-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Remediation Execution Modal Overlay -->
+  <div class="modal-overlay" id="remediation-modal">
+    <div class="modal-card" style="max-width:760px;">
+      <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2">
+          <span style="width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
+          <h3 class="text-base font-bold text-white uppercase" id="rem-modal-title">⚡ Autonomous Seabed Remediation Mission</h3>
+        </div>
+        <button class="cmd-btn" id="close-remediation-modal">
+          <span>✕ Close</span>
+        </button>
+      </div>
+
+      <div class="remediation-card">
+        <div class="remediation-header">
+          <div>
+            <div class="text-xs text-muted">TARGET ANOMALY ID:</div>
+            <div class="text-base font-bold text-cyan code-font" id="rem-target-id">TGT-MP1</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted">CLASSIFICATION:</div>
+            <div class="text-sm font-bold text-white" id="rem-target-label">Dense Microplastic Nurdle Bed</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted">THREAT REDUCTION:</div>
+            <div class="text-sm font-bold text-green" id="rem-risk-reduction">86/100 → 0/100 [CONTAINED]</div>
+          </div>
+        </div>
+
+        <div class="text-xs text-gray-300 mb-2">
+          <strong class="text-cyan">Remediation Action Protocol:</strong>
+          <span id="rem-action-protocol">Deploy autonomous benthic suction dredge with 50-micron filtration canister.</span>
+        </div>
+
+        <!-- 3-Phase Deployment Timeline -->
+        <div class="remediation-timeline">
+          <div class="remediation-step active" id="rem-step-1">
+            <div class="step-icon">1</div>
+            <div style="flex:1;">
+              <div class="flex justify-between">
+                <strong class="text-xs text-white">Phase 1: Acoustic Vector Lock & ROV Positioning</strong>
+                <span class="code-font text-xs text-cyan" id="rem-step1-status">COMPLETED</span>
+              </div>
+              <div class="text-[10px] text-muted">Subsea transponder baseline locked. Manipulator aligned with anomaly geometry.</div>
+            </div>
+          </div>
+
+          <div class="remediation-step" id="rem-step-2">
+            <div class="step-icon">2</div>
+            <div style="flex:1;">
+              <div class="flex justify-between">
+                <strong class="text-xs text-white">Phase 2: Robotic Execution & Material Containment</strong>
+                <span class="code-font text-xs text-cyan" id="rem-step2-status">EXECUTING...</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar-glow" id="rem-progress-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="remediation-step" id="rem-step-3">
+            <div class="step-icon">3</div>
+            <div style="flex:1;">
+              <div class="flex justify-between">
+                <strong class="text-xs text-white">Phase 3: Benthic Impact Neutralization & Cryptographic Log</strong>
+                <span class="code-font text-xs text-muted" id="rem-step3-status">PENDING</span>
+              </div>
+              <div class="text-[10px] text-muted">Seabed backscatter verified clean. Official remediation certificate generated.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subsea Acoustic Telemetry Log Terminal -->
+        <div class="remediation-log-terminal" id="rem-log-terminal">
+          [00:00:01 UTC] ROV Hercules locking onto anomaly coordinates...<br>
+          [00:00:02 UTC] Acoustic sonar rangefinder verified target clearance: 1.40m<br>
+        </div>
+
+        <!-- Official Certificate Box -->
+        <div class="remediation-cert-box" id="rem-cert-box" style="display:none;">
+          <div class="text-base font-bold text-green mb-1">🛡️ SEABED REMEDIATION DISPATCH CERTIFICATE</div>
+          <div class="text-xs text-gray-300" id="rem-cert-desc">Anomaly neutralized and contained in compliance with Naval Environmental Protection Directive 2026.</div>
+          <div class="flex justify-center gap-2 mt-3">
+            <button class="cmd-btn primary" id="btn-print-rem-cert">
+              <span>🖨️ Print Remediation Certificate</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Modules -->
+  <script src="js/sonar-presets.js"></script>
+  <script src="js/audio-effects.js"></script>
+  <script src="js/ai-classifier.js"></script>
+  <script src="js/optical-synthesizer.js"></script>
+  <script src="js/rov-controller.js"></script>
+  <script src="js/image-processor.js"></script>
+  <script src="js/detector.js"></script>
+  <script src="js/map-manager.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/export-engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "aquaguard",
+  "version": "1.0.0",
+  "description": "DeepSea Sonar & Microplastics AI Intelligence Platform",
+  "license": "MIT",
+  "author": "Pooja Chettur S",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node tests/validate-sample-data.js"
+  }
+}

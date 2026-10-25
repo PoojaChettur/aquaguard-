@@ -1,0 +1,11 @@
+{
+  "target_id": "TGT-MP1",
+  "density_part_m3": 18450,
+  "risk": "HIGH BENTHIC",
+  "polymers_pct": {
+    "PE": 48,
+    "PP": 26,
+    "PET": 15,
+    "Nylon": 11
+  }
+}
